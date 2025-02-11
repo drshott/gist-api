@@ -1,0 +1,30 @@
+../README_ORI.md
+README.md
+
+### Tests ###
+tests/
+.pytest_cache
+htmlcov
+junit
+.coverage
+coverage.xml
+.coveragerc
+
+### Intellij IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+out/
+
+### VS Code ###
+.vscode/
+
+### Docker ###
+app/Dockerfile
+.dockerignore
+
+### Git ###
+.git
+.gitattributes
+.gitignore

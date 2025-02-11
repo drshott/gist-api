@@ -1,0 +1,18 @@
+### Tests ###
+.pytest_cache
+htmlcov
+junit
+.coverage
+coverage.xml
+.coveragerc
+tests/reports/*
+
+### Intellij IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+out/
+
+### VS Code ###
+.vscode/
