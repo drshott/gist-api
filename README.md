@@ -3,7 +3,7 @@
 
 This is an example interface for GitHub API. Using this tool you will be able to view publicly available gists for a user.
 
-This repository contains the Python API code and Docker file required to get the tool up and running.
+This repository contains the Python API code and Docker file as well as helm chart required to get the tool up and running.
 
 
 ## Building and Running a container
