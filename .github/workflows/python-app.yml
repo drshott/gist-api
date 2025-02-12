@@ -5,7 +5,11 @@ name: Python application
 
 on:
   push:
-    branches: [ "main" ]
+    branches:
+      - feature/*
+      - release/*
+      - hotfix/*
+      - main
   pull_request:
     branches: [ "main" ]
 
@@ -14,29 +18,33 @@ permissions:
 
 jobs:
   test:
-
     runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v4
+
     - name: Set up Python 3
       uses: actions/setup-python@v4
       with:
         python-version: "3.12"
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install flake8 pytest
         if [ -f app/requirements.txt ]; then pip install -r app/requirements.txt; fi
+
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
     - name: Test with pytest
       run: |
         pytest tests/tests.py
+
     - name: test coverage
       run: |
         # check coveragge
@@ -49,14 +57,64 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+
       - name: Login to Docker Hub
         uses: docker/login-action@v2
         with:
           username: vaidyaswapneel
           password: ${{ secrets.DOCKER_PASS }}
+
+      - name: Set Image Tag (Full Git Commit Hash)
+        run: echo "IMAGE_TAG=$(git rev-parse HEAD)" >> $GITHUB_ENV
+
       - name: Build docker image for APP
         run: |
           cd ./app
           # build using docker build
-          docker build . --tag vaidyaswapneel/gist-api:latest
-          docker push vaidyaswapneel/gist-api:latest
+          docker build . --tag vaidyaswapneel/gist-api::${{ env.IMAGE_TAG }}
+          docker push vaidyaswapneel/gist-api::${{ env.IMAGE_TAG }}
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Set Environment Mapping
+        run: |
+          if [[ "${{ github.ref_name }}" == "main" ]]; then
+            echo "ENVIRONMENT=prod" >> $GITHUB_ENV
+            echo "MANIFEST_BRANCH=main" >> $GITHUB_ENV
+          elif [[ "${{ github.ref_name }}" == release/* ]]; then
+            echo "ENVIRONMENT=test" >> $GITHUB_ENV
+            echo "MANIFEST_BRANCH=test" >> $GITHUB_ENV
+          elif [[ "${{ github.ref_name }}" == feature/* ]]; then
+            echo "ENVIRONMENT=dev" >> $GITHUB_ENV
+            echo "MANIFEST_BRANCH=dev" >> $GITHUB_ENV
+          else
+            echo "Unknown branch, skipping deployment"
+            exit 1
+          fi
+
+      - name: Set Image Tag (Full Git Commit Hash)
+        run: echo "IMAGE_TAG=$(git rev-parse HEAD)" >> $GITHUB_ENV
+
+      - name: Checkout Manifest Repo
+        uses: actions/checkout@v4
+        with:
+          repository: drshott/helm-charts
+          token: ${{ secrets.GITOPS_TOKEN }}
+          path: helm-charts
+          ref: ${{ env.MANIFEST_BRANCH }}
+
+      - name: Update Image Tag in values.yaml
+        run: |
+          sed -i "s|tag:.*|tag: ${{ env.IMAGE_TAG }}|" helm-charts/charts/gist-api/values.yaml
+
+      - name: Commit and Push Changes
+        run: |
+          cd helm-charts
+          git config --global user.name "gitops-user"
+          git config --global user.email "gitops.user@github.com"
+          git add charts/gist-api/values.yaml
+          git commit -m "Update image tag for ${{ github.ref_name }} to ${{ env.IMAGE_TAG }}"
+          git push origin ${{ github.ref_name }}
