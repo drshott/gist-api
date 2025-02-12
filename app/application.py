@@ -18,8 +18,6 @@ def create_app():
     # customizations and configurations
     # Apply custom openapi configuration to generated swaggerdoc
     custom_openapi_configuration(appi)
-    # Apply FastAPI pagination to the responses
-    add_pagination(appi)
 
     # default route for appi index
     @appi.get('/')
@@ -33,6 +31,8 @@ def create_app():
 
     # Router declarations
     appi.include_router(user_router)
+    # Apply FastAPI pagination to the responses
+    add_pagination(appi)
 
     return appi
 
