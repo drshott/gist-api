@@ -15,9 +15,6 @@ def create_app():
     # appi declaration
     appi = FastAPI()
 
-    # Router declarations
-    appi.include_router(user_router)
-
     # customizations and configurations
     # Apply custom openapi configuration to generated swaggerdoc
     custom_openapi_configuration(appi)
@@ -33,6 +30,9 @@ def create_app():
     @appi.get('/health')
     async def health():
         return fastapi.responses.Response('Health OK!!')
+
+    # Router declarations
+    appi.include_router(user_router)
 
     return appi
 
