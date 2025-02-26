@@ -25,7 +25,7 @@ def create_app():
         return fastapi.responses.Response('Welcome to gist interface API, Please provide an Username to get gists eg. /octocat')
 
     # default route for appi index
-    @appi.get('/health')
+    @appi.get('/healthz')
     async def health():
         return fastapi.responses.Response('Health OK!!')
 
